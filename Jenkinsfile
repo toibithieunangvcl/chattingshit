@@ -1,61 +1,34 @@
 pipeline {
     agent any
-
-    environment {
-        DOCKER_USER = credentials('dockerhub-user')   // username trong Jenkins Credentials
-        DOCKER_PASS = credentials('dockerhub-pass')   // password/token trong Jenkins Credentials
-        IMAGE_NAME = "toibithieunangvcl/myapp"
-    }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/your-username/your-repo.git'
+                git url: 'git@github.com:your-org/your-repo.git', branch: 'main'
             }
         }
-
-        stage('Build Docker Image') {
+        stage('Build Docker') {
             steps {
-                script {
-                    sh """
-                    docker build -t $IMAGE_NAME:\${BUILD_NUMBER} .
-                    docker tag $IMAGE_NAME:\${BUILD_NUMBER} $IMAGE_NAME:latest
-                    """
+                sh 'docker build -t yourapp:latest .'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'docker run --rm yourapp:latest pytest tests/'
+            }
+        }
+        stage('Push Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker tag yourapp:latest $DOCKER_USER/yourapp:latest'
+                    sh 'docker push $DOCKER_USER/yourapp:latest'
                 }
             }
         }
-
-        stage('Push Docker Image') {
+        stage('Deploy') {
             steps {
-                script {
-                    sh """
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push $IMAGE_NAME:\${BUILD_NUMBER}
-                    docker push $IMAGE_NAME:latest
-                    """
-                }
+                sh 'docker compose up -d'
             }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    sh """
-                    kubectl set image deployment/myapp-deployment myapp-container=$IMAGE_NAME:\${BUILD_NUMBER} --record
-                    kubectl rollout status deployment/myapp-deployment
-                    """
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Deploy thành công!"
-        }
-        failure {
-            echo "❌ Build/Deploy thất bại!"
         }
     }
 }
