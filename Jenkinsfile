@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-cred')
+        DOCKERHUB_CREDENTIALS = credentials('vutuantom')
         DOCKER_IMAGE = "your-dockerhub-username/your-app"
     }
 
