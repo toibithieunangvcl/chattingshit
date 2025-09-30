@@ -2,36 +2,32 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
-        DOCKER_HUB_REPO = "your-dockerhub-username"
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials2')
+        IMAGE_NAME = "your-dockerhub-username/streamlit-app"
     }
 
     stages {
-        stage('Login to Docker Hub') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh """
-                    echo $DOCKER_HUB_CREDENTIALS_PSW | docker login -u $DOCKER_HUB_CREDENTIALS_USR --password-stdin
-                    """
+                    sh 'docker build -t ${IMAGE_NAME}:latest .'
                 }
             }
         }
-        
-        stage('Build and Push Streamlit') {
+
+        stage('Login to Docker Hub') {
             steps {
-                sh """
-                docker build -t $DOCKER_HUB_REPO/streamlit-app:latest -f Dockerfile.streamlit .
-                docker push $DOCKER_HUB_REPO/streamlit-app:latest
-                """
+                script {
+                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                }
             }
         }
-        
-        stage('Build and Push Nginx') {
+
+        stage('Push to Docker Hub') {
             steps {
-                sh """
-                docker build -t $DOCKER_HUB_REPO/nginx-proxy:latest -f Dockerfile.nginx .
-                docker push $DOCKER_HUB_REPO/nginx-proxy:latest
-                """
+                script {
+                    sh 'docker push ${IMAGE_NAME}:latest'
+                }
             }
         }
     }
