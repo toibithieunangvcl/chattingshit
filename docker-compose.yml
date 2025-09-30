@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # Web UI
+      - "50000:50000" # JNLP agent
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock   # Jenkins dùng Docker của host
+      - /usr/bin/docker:/usr/bin/docker             # Mount docker CLI binary
+
+volumes:
+  jenkins_home:
