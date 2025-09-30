@@ -41,8 +41,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Restart container với image mới
-                    sh "docker-compose -f docker-compose.yml up -d --no-deps --build streamlit"
+                    sh '''
+                        docker-compose -f docker-compose.yml down
+                        docker-compose -f docker-compose.yml up -d --build
+                    '''
                 }
             }
         }
